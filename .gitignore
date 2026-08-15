@@ -1,0 +1,42 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+node_modules
+dist
+dist-ssr
+*.local
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Texture source archive — 241 MB, never served.
+#
+# The loader in src/scene/textures.ts builds only flat
+# `/textures/<stem>.{jpg,png,webp}` URLs, so nothing under these directories is
+# reachable at runtime; a browser capture of a full session requests 18 assets,
+# all of them top level, none from a subfolder. These hold the original
+# Solar System Scope downloads and the intermediate conversions used to produce
+# the files that DO ship, which sit directly in public/textures/.
+#
+# They are re-downloadable from https://www.solarsystemscope.com/textures/
+# (CC BY 4.0, credited in the site footer). Keep local copies if you intend to
+# regenerate the shipped maps — git is not backing these up.
+public/textures/full8k/
+public/textures/raw8k/
+public/textures/hd8k/
+public/textures/hd/
+public/textures/raw/

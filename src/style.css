@@ -1,0 +1,1023 @@
+:root {
+  color-scheme: dark;
+  --bg: #02040a;
+  --panel: rgba(8, 14, 28, 0.78);
+  --panel-border: rgba(125, 211, 252, 0.18);
+  --text: #e8eefc;
+  --muted: #93a4c3;
+  --accent: #38bdf8;
+  --accent-2: #a78bfa;
+  --chip: rgba(15, 23, 42, 0.85);
+  --danger: #f87171;
+  --font: "Segoe UI", "SF Pro Display", system-ui, -apple-system, sans-serif;
+  --mono: "SF Mono", "JetBrains Mono", ui-monospace, monospace;
+  --radius: 16px;
+  --shadow: 0 20px 60px rgba(0, 0, 0, 0.45);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#app {
+  margin: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font);
+}
+
+.shell {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+.cosmos-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  outline: none;
+  touch-action: none;
+}
+
+.label-host,
+.planet-labels-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 8;
+}
+
+/* Cute floating planet identity tags */
+.planet-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.28rem 0.65rem 0.28rem 0.4rem;
+  border-radius: 999px;
+  background: rgba(8, 14, 28, 0.78);
+  border: 1px solid rgba(125, 211, 252, 0.28);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(10px);
+  color: #e8eefc;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  white-space: nowrap;
+  transform: translateY(-4px);
+  transition: transform 0.2s ease, border-color 0.2s, background 0.2s, box-shadow 0.2s;
+  user-select: none;
+}
+
+.planet-tag__dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--tag-color, #88a);
+  box-shadow: 0 0 10px color-mix(in srgb, var(--tag-color, #88a) 70%, transparent);
+  flex-shrink: 0;
+}
+
+.planet-tag__name {
+  line-height: 1;
+}
+
+.planet-tag--active {
+  font-size: 0.82rem;
+  padding: 0.35rem 0.8rem 0.35rem 0.45rem;
+  border-color: rgba(56, 189, 248, 0.65);
+  background: rgba(14, 30, 55, 0.9);
+  box-shadow:
+    0 0 0 1px rgba(56, 189, 248, 0.2),
+    0 10px 28px rgba(56, 189, 248, 0.2);
+  transform: translateY(-6px) scale(1.05);
+}
+
+.planet-tag--active .planet-tag__dot {
+  width: 12px;
+  height: 12px;
+}
+
+/* ——— Top bar ——— */
+.topbar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  padding: 1rem 1.25rem;
+  pointer-events: none;
+  background: linear-gradient(
+    to bottom,
+    rgba(2, 4, 10, 0.85) 0%,
+    rgba(2, 4, 10, 0.35) 70%,
+    transparent 100%
+  );
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  pointer-events: auto;
+}
+
+.brand__mark {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 35% 35%, #fff7c2, #ffb020 40%, #ff6a00 70%, transparent 72%),
+    radial-gradient(circle at 70% 60%, #38bdf8, transparent 55%);
+  box-shadow: 0 0 24px rgba(56, 189, 248, 0.45);
+}
+
+.brand__kicker {
+  margin: 0;
+  font-size: 0.7rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.brand__title {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 650;
+  letter-spacing: -0.02em;
+}
+
+.topbar__hint {
+  margin: 0;
+  flex: 1;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.status {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.45rem 0.75rem;
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.7);
+  border: 1px solid var(--panel-border);
+  font-size: 0.8rem;
+  color: var(--muted);
+  pointer-events: auto;
+  backdrop-filter: blur(12px);
+}
+
+.status__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #fbbf24;
+  box-shadow: 0 0 8px #fbbf24;
+  animation: pulse 1.4s ease-in-out infinite;
+}
+
+.status--ready .status__dot {
+  background: #34d399;
+  box-shadow: 0 0 8px #34d399;
+  animation: none;
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.4;
+  }
+}
+
+/* ——— Loading ——— */
+.loading-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 40;
+  display: grid;
+  place-items: center;
+  background: radial-gradient(ellipse at center, #0b1224 0%, #02040a 70%);
+  transition: opacity 0.5s ease, visibility 0.5s ease;
+}
+
+.loading-overlay--done {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.loading-card {
+  text-align: center;
+  padding: 2rem 2.5rem;
+  border-radius: var(--radius);
+  background: var(--panel);
+  border: 1px solid var(--panel-border);
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(16px);
+}
+
+.loading-spinner {
+  width: 42px;
+  height: 42px;
+  margin: 0 auto 1rem;
+  border-radius: 50%;
+  border: 3px solid rgba(56, 189, 248, 0.2);
+  border-top-color: var(--accent);
+  animation: spin 0.9s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.loading-sub {
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+/* ——— Learning panel ——— */
+.panel-dock {
+  position: absolute;
+  top: 5.5rem;
+  right: 1rem;
+  bottom: 6.5rem;
+  width: min(360px, calc(100vw - 2rem));
+  z-index: 15;
+  pointer-events: none;
+}
+
+.learning-panel {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  pointer-events: auto;
+  background: var(--panel);
+  border: 1px solid var(--panel-border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(18px) saturate(1.2);
+  overflow: hidden;
+}
+
+.learning-panel__chrome {
+  padding: 1.1rem 1.15rem 0.85rem;
+  border-bottom: 1px solid rgba(125, 211, 252, 0.1);
+  background: linear-gradient(
+    135deg,
+    rgba(56, 189, 248, 0.08),
+    rgba(167, 139, 250, 0.06)
+  );
+}
+
+.learning-panel__eyebrow {
+  font-size: 0.68rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.learning-panel__title {
+  margin: 0.25rem 0 0.15rem;
+  font-size: 1.65rem;
+  letter-spacing: -0.03em;
+}
+
+.learning-panel__tagline {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.92rem;
+}
+
+.learning-panel__scroll {
+  overflow: auto;
+  padding: 1rem 1.15rem 1.25rem;
+  overscroll-behavior: contain;
+}
+
+.learning-panel__overview {
+  margin: 0 0 1rem;
+  line-height: 1.55;
+  color: #d5def0;
+  font-size: 0.95rem;
+}
+
+.learning-panel__section {
+  margin-bottom: 1.1rem;
+}
+
+.learning-panel__section h3 {
+  margin: 0 0 0.5rem;
+  font-size: 0.72rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent-2);
+}
+
+.learning-panel__section p {
+  margin: 0;
+  line-height: 1.5;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.learning-panel__facts {
+  margin: 0;
+  display: grid;
+  gap: 0.4rem;
+}
+
+.fact-row {
+  display: grid;
+  grid-template-columns: 1fr 1.3fr;
+  gap: 0.5rem;
+  padding: 0.4rem 0.5rem;
+  border-radius: 8px;
+  background: rgba(15, 23, 42, 0.55);
+}
+
+.fact-row dt {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+
+.fact-row dd {
+  margin: 0;
+  font-size: 0.82rem;
+  text-align: right;
+  color: var(--text);
+}
+
+.learning-panel__features {
+  margin: 0;
+  padding-left: 1.1rem;
+  color: var(--muted);
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.learning-panel__hint {
+  margin: 0 0 0.5rem !important;
+  font-size: 0.8rem !important;
+}
+
+.learning-panel__hotspots {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.hotspot-chip {
+  appearance: none;
+  border: 1px solid rgba(56, 189, 248, 0.3);
+  background: rgba(14, 165, 233, 0.1);
+  color: #bae6fd;
+  border-radius: 999px;
+  padding: 0.35rem 0.7rem;
+  font-size: 0.78rem;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, transform 0.1s;
+}
+
+.hotspot-chip:hover {
+  background: rgba(14, 165, 233, 0.22);
+  border-color: var(--accent);
+}
+
+.hotspot-chip--active {
+  background: rgba(56, 189, 248, 0.3);
+  border-color: var(--accent);
+  color: #fff;
+  box-shadow: 0 0 12px rgba(56, 189, 248, 0.35);
+}
+
+.learning-panel__detail {
+  padding: 0.75rem;
+  border-radius: 12px;
+  background: rgba(56, 189, 248, 0.1);
+  border: 1px solid rgba(56, 189, 248, 0.25);
+}
+
+.learning-panel__detail h3 {
+  color: var(--accent) !important;
+}
+
+/* ——— Body journey rail ——— */
+.journey-dock {
+  position: absolute;
+  left: 1rem;
+  right: 1rem;
+  bottom: 1.5rem;
+  z-index: 15;
+  display: flex;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.body-selector {
+  pointer-events: auto;
+  max-width: min(1100px, 100%);
+  padding: 0.65rem 0.85rem 0.75rem;
+  border-radius: 18px;
+  background: var(--panel);
+  border: 1px solid var(--panel-border);
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(16px);
+}
+
+.body-selector__label {
+  font-size: 0.68rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 0.45rem;
+  text-align: center;
+}
+
+.body-selector__rail {
+  display: flex;
+  gap: 0.4rem;
+  overflow-x: auto;
+  padding-bottom: 0.15rem;
+  scrollbar-width: thin;
+}
+
+.body-chip {
+  appearance: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.3rem;
+  min-width: 72px;
+  padding: 0.5rem 0.55rem;
+  border-radius: 12px;
+  border: 1px solid transparent;
+  background: var(--chip);
+  color: var(--muted);
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s, color 0.15s, transform 0.1s;
+}
+
+.body-chip:hover:not(:disabled) {
+  border-color: rgba(56, 189, 248, 0.35);
+  color: var(--text);
+  transform: translateY(-1px);
+}
+
+.body-chip:disabled {
+  opacity: 0.55;
+  cursor: wait;
+}
+
+.body-chip--active {
+  border-color: rgba(56, 189, 248, 0.55);
+  background: rgba(56, 189, 248, 0.12);
+  color: #fff;
+  box-shadow: inset 0 0 0 1px rgba(56, 189, 248, 0.15);
+}
+
+.body-chip__dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--chip-color, #888);
+  box-shadow: 0 0 10px color-mix(in srgb, var(--chip-color) 60%, transparent);
+}
+
+.body-chip__name {
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+/* ——— Credits ——— */
+.credits {
+  position: absolute;
+  left: 1rem;
+  bottom: 0.45rem;
+  z-index: 10;
+  margin: 0;
+  font-size: 0.68rem;
+  color: rgba(147, 164, 195, 0.65);
+  pointer-events: none;
+}
+
+/* ——— Responsive ——— */
+@media (max-width: 860px) {
+  .topbar__hint {
+    display: none;
+  }
+
+  .panel-dock {
+    top: auto;
+    bottom: 7.25rem;
+    left: 0.75rem;
+    right: 0.75rem;
+    width: auto;
+    height: min(38vh, 320px);
+  }
+
+  .learning-panel__title {
+    font-size: 1.3rem;
+  }
+
+  .body-chip {
+    min-width: 64px;
+  }
+}
+
+@media (max-width: 480px) {
+  .brand__title {
+    font-size: 1.05rem;
+  }
+
+  .status {
+    display: none;
+  }
+}
+
+/* ——— Time & view dock ——— */
+.mono {
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+}
+
+.time-dock {
+  position: absolute;
+  top: 5.5rem;
+  left: 1rem;
+  z-index: 15;
+  width: min(33rem, calc(100vw - 2rem));
+  pointer-events: none;
+}
+
+.time-controls {
+  pointer-events: auto;
+  display: grid;
+  gap: 0.5rem;
+  padding: 0.7rem 0.8rem 0.75rem;
+  border-radius: var(--radius);
+  background: var(--panel);
+  border: 1px solid var(--panel-border);
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(18px) saturate(1.2);
+}
+
+.time-controls :focus-visible {
+  outline: 2px solid rgba(56, 189, 248, 0.75);
+  outline-offset: 2px;
+}
+
+.time-row {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  min-width: 0;
+}
+
+.time-row--clock {
+  gap: 0.6rem;
+  padding-bottom: 0.15rem;
+  border-bottom: 1px solid rgba(125, 211, 252, 0.1);
+}
+
+.time-row__legend {
+  flex: 0 0 auto;
+  width: 2.6rem;
+  font-size: 0.62rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.time-row__actions {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+/* Play / pause */
+.time-play {
+  appearance: none;
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 1px solid rgba(56, 189, 248, 0.4);
+  background: rgba(56, 189, 248, 0.14);
+  color: #bae6fd;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s, transform 0.1s;
+}
+
+.time-play:hover {
+  background: rgba(56, 189, 248, 0.26);
+  border-color: var(--accent);
+  color: #fff;
+}
+
+.time-play:active {
+  transform: scale(0.94);
+}
+
+.time-play__icon {
+  width: 14px;
+  height: 14px;
+  fill: currentColor;
+}
+
+.time-play__icon--pause {
+  display: none;
+}
+
+.time-play--playing .time-play__icon--play {
+  display: none;
+}
+
+.time-play--playing .time-play__icon--pause {
+  display: block;
+}
+
+/* Clock readout — fixed-width digits so it never reflows */
+.time-readout {
+  display: grid;
+  gap: 0.1rem;
+  /* The timestamp is the point of this dock — let the date picker give up
+     width instead of clipping the readout mid-value. */
+  min-width: max-content;
+}
+
+.time-readout__label {
+  font-size: 0.6rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.time-readout__value {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text);
+  white-space: nowrap;
+}
+
+/* Pill buttons */
+.time-btn {
+  appearance: none;
+  border: 1px solid rgba(125, 211, 252, 0.22);
+  background: var(--chip);
+  color: var(--muted);
+  border-radius: 999px;
+  padding: 0.32rem 0.62rem;
+  font-family: inherit;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s, color 0.15s, transform 0.1s;
+}
+
+.time-btn:hover {
+  border-color: rgba(56, 189, 248, 0.5);
+  background: rgba(56, 189, 248, 0.12);
+  color: var(--text);
+}
+
+.time-btn:active {
+  transform: translateY(1px);
+}
+
+.time-btn--icon span {
+  color: var(--accent);
+  margin-right: 0.1rem;
+}
+
+/* Date jump */
+.time-date {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.22rem 0.45rem;
+  border-radius: 999px;
+  border: 1px solid rgba(125, 211, 252, 0.22);
+  background: var(--chip);
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.time-date:hover,
+.time-date:focus-within {
+  border-color: rgba(56, 189, 248, 0.5);
+  background: rgba(56, 189, 248, 0.1);
+}
+
+.time-date__icon {
+  font-size: 0.75rem;
+  line-height: 1;
+  opacity: 0.8;
+}
+
+.time-date__input {
+  appearance: none;
+  border: 0;
+  outline: none;
+  padding: 0;
+  background: transparent;
+  color: var(--text);
+  font-family: var(--mono);
+  font-size: 0.68rem;
+  max-width: 100%;
+  cursor: pointer;
+}
+
+.time-date__input::-webkit-calendar-picker-indicator {
+  opacity: 0.6;
+  cursor: pointer;
+}
+
+/* Speed chips — same visual language as .body-chip */
+.time-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+}
+
+.time-chip {
+  appearance: none;
+  border: 1px solid transparent;
+  background: var(--chip);
+  color: var(--muted);
+  border-radius: 999px;
+  padding: 0.3rem 0.55rem;
+  font-family: inherit;
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s, color 0.15s, transform 0.1s;
+}
+
+.time-chip:hover {
+  border-color: rgba(56, 189, 248, 0.35);
+  color: var(--text);
+  transform: translateY(-1px);
+}
+
+.time-chip--active {
+  border-color: rgba(56, 189, 248, 0.55);
+  background: rgba(56, 189, 248, 0.12);
+  color: #fff;
+  box-shadow: inset 0 0 0 1px rgba(56, 189, 248, 0.15);
+}
+
+/* Distance-mode segmented control */
+.time-seg {
+  display: inline-flex;
+  gap: 2px;
+  padding: 2px;
+  border-radius: 999px;
+  background: var(--chip);
+  border: 1px solid rgba(125, 211, 252, 0.18);
+}
+
+.time-seg__btn {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  border-radius: 999px;
+  padding: 0.26rem 0.55rem;
+  font-family: inherit;
+  font-size: 0.68rem;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.time-seg__btn:hover {
+  color: var(--text);
+}
+
+.time-seg__btn--active {
+  background: rgba(56, 189, 248, 0.16);
+  color: #fff;
+  box-shadow: inset 0 0 0 1px rgba(56, 189, 248, 0.28);
+}
+
+/* Checkbox toggles */
+.time-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.32rem;
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: var(--muted);
+  white-space: nowrap;
+  cursor: pointer;
+  user-select: none;
+  transition: color 0.15s;
+}
+
+.time-toggle:hover {
+  color: var(--text);
+}
+
+.time-toggle input {
+  appearance: none;
+  flex: 0 0 auto;
+  width: 14px;
+  height: 14px;
+  margin: 0;
+  border-radius: 4px;
+  border: 1px solid rgba(125, 211, 252, 0.35);
+  background: var(--chip);
+  cursor: pointer;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.time-toggle input:checked {
+  border-color: rgba(56, 189, 248, 0.65);
+  box-shadow: inset 0 0 0 6px rgba(56, 189, 248, 0.9);
+}
+
+.time-toggle:has(input:checked) {
+  color: var(--text);
+}
+
+@media (max-width: 860px) {
+  .time-dock {
+    top: 4.5rem;
+    left: 0.75rem;
+    right: 0.75rem;
+    width: auto;
+  }
+
+  .time-controls {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.45rem 0.6rem;
+    overflow-x: auto;
+    scrollbar-width: thin;
+  }
+
+  .time-row {
+    flex: 0 0 auto;
+  }
+
+  .time-row--clock {
+    padding-bottom: 0;
+    border-bottom: 0;
+  }
+
+  .time-row__legend,
+  .time-readout__label {
+    display: none;
+  }
+
+  .time-row__actions {
+    margin-left: 0;
+  }
+
+  .time-readout__value {
+    font-size: 0.8rem;
+  }
+
+  .time-chips {
+    flex-wrap: nowrap;
+  }
+}
+
+@media (max-width: 480px) {
+  .time-dock {
+    top: 4.25rem;
+  }
+
+  .time-row--view {
+    display: none;
+  }
+}
+
+/* ============================================================
+   Intro sequence
+   ============================================================ */
+
+/*
+ * While the intro runs, every piece of site chrome is held at zero opacity and
+ * made non-interactive. It is a fade rather than `display: none` so the layout
+ * — and therefore the HUD-safe camera framing in systemView.ts — is already
+ * correct when the sequence hands over.
+ */
+.shell--intro .topbar,
+.shell--intro .time-dock,
+.shell--intro .panel-dock,
+.shell--intro .journey-dock,
+.shell--intro .credits {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.topbar,
+.time-dock,
+.panel-dock,
+.journey-dock,
+.credits {
+  transition: opacity 900ms ease 120ms;
+}
+
+.shell--intro .planet-labels-layer {
+  transition: opacity 400ms linear;
+}
+
+.intro-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 40;
+  /* Swallows clicks so a stray tap cannot land on a body that is mid-flight,
+     and so "click anywhere to skip" needs no cooperation from the canvas. */
+  pointer-events: auto;
+  background: transparent;
+  opacity: 1;
+  transition: opacity 500ms ease;
+}
+
+.intro-overlay--done {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.intro-skip {
+  position: absolute;
+  right: 28px;
+  bottom: 26px;
+  padding: 9px 18px;
+  border-radius: 999px;
+  border: 1px solid rgba(148, 180, 235, 0.28);
+  background: rgba(6, 11, 24, 0.55);
+  backdrop-filter: blur(10px);
+  color: var(--muted);
+  font-family: var(--font);
+  font-size: 0.78rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  cursor: pointer;
+  opacity: 0;
+  transform: translateY(6px);
+  transition:
+    opacity 600ms ease,
+    transform 600ms ease,
+    color 200ms ease,
+    border-color 200ms ease;
+}
+
+.intro-skip--visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.intro-skip:hover,
+.intro-skip:focus-visible {
+  color: var(--text);
+  border-color: rgba(56, 189, 248, 0.55);
+  outline: none;
+}
+
+/*
+ * Reduced motion never reaches this stylesheet's animated states — the sequence
+ * is not constructed at all (see shouldPlayIntro) — but if the preference is
+ * switched on mid-session, kill the transitions rather than run them.
+ */
+@media (prefers-reduced-motion: reduce) {
+  .topbar,
+  .time-dock,
+  .panel-dock,
+  .journey-dock,
+  .credits,
+  .intro-overlay,
+  .intro-skip {
+    transition-duration: 1ms;
+  }
+}
