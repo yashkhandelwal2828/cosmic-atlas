@@ -1,0 +1,22 @@
+# Texture source archive — 241 MB, never served.
+#
+# These are gitignored too, so a deploy built from the GitHub repo never sees
+# them. This file covers the other path: `vercel --prod` run from a local
+# checkout uploads the working directory, where these directories still exist
+# on disk. Without this they would be uploaded on every CLI deploy and served
+# to nobody.
+#
+# See .gitignore for why they are not required.
+public/textures/full8k/
+public/textures/raw8k/
+public/textures/hd8k/
+public/textures/hd/
+public/textures/raw/
+
+# Build output and deps — Vercel builds these itself.
+node_modules
+dist
+
+# Local verification scratch.
+intro-check/
+*.log
