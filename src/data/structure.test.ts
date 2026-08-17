@@ -40,6 +40,8 @@ describe('shipped entry surface', () => {
     const scene = read('src/scene/SolarSystem.ts')
     expect(scene).toMatch(/WebGLRenderer/)
     expect(scene).toMatch(/travelTo/)
+    expect(scene).toMatch(/sampleCameraArc/)
+    expect(scene).toMatch(/gsap/)
     expect(scene).toMatch(/showHotspots/)
     expect(scene).toMatch(/saturn|rings/i)
     expect(scene).toMatch(/createSunVisuals/)

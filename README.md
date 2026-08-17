@@ -26,7 +26,7 @@ npm run preview   # serve dist/
 |--------|--------|
 | Bodies | Sun + Mercury, Venus, Earth, Mars, Jupiter, Saturn (rings), Uranus, Neptune |
 | Start | Camera + learning panel focused on **Earth** |
-| Travel | Journey rail animates the camera to the selected body |
+| Travel | Journey rail flies the camera along a GSAP arc (swoop out, then in) |
 | Learning | Mission brief panel: overview, key facts, composition, features |
 | Hotspots | 3–4 markers per body; click in 3D or in the panel |
 | Assets | **HD WebP** maps (Earth from 8K source → 4K web; others high-quality 2K + unsharp); Earth normal/specular/clouds PBR stack; fresnel atmospheres; galaxy starfield; ~6–7 MB critical textures |

@@ -1,6 +1,7 @@
 /**
  * Three.js solar-system scene controller.
- * Real 8K-sourced maps, Earth day/night blend, planet name labels, Mars normals.
+ * Real 8K-sourced maps (served at a per-device resolution tier — see
+ * textureTier.ts), Earth day/night blend, planet name labels, Mars normals.
  *
  * Every body is a three-level node stack:
  *
@@ -16,6 +17,7 @@
  * orbitGroup carries no rotation, the axis stays fixed in world space all the way
  * around the orbit — which is what produces seasons.
  */
+import gsap from 'gsap'
 import * as THREE from 'three'
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js'
 import {
@@ -65,6 +67,7 @@ import {
   systemViewDistance,
   systemViewMaxDistance,
 } from './systemView'
+import { sampleCameraArc, sampleLookTarget } from './cameraArc'
 
 const BASE_RADIUS = 1.2
 
@@ -110,6 +113,14 @@ export type BodyTransformOverride = (
   out: BodyTransform,
 ) => void
 
+/** WebGL context flags worth deciding per boot rather than hardcoding. */
+export interface SolarSystemOptions {
+  /** Default true. See the renderer construction for when it earns its cost. */
+  antialias?: boolean
+  /** Default false. Only the headless capture scripts need the readback. */
+  preserveDrawingBuffer?: boolean
+}
+
 /** The per-body node stack described in the file header. */
 interface BodyNodes {
   orbitGroup: THREE.Group
@@ -141,8 +152,8 @@ export class SolarSystem {
   private lookFrom = new THREE.Vector3()
   private lookTo = new THREE.Vector3()
   private travelActive = false
-  private travelT = 0
-  private travelDuration = 1.6
+  private travelProgress = { t: 0 }
+  private travelTween: gsap.core.Tween | null = null
   private focusedId: BodyId = 'earth'
   private onTravelComplete: ((id: BodyId) => void) | null = null
   private onHotspotClick: ((hotspot: Hotspot) => void) | null = null
@@ -178,7 +189,11 @@ export class SolarSystem {
     scale: 1,
   }
 
-  constructor(canvas: HTMLCanvasElement, textures: TextureCache) {
+  constructor(
+    canvas: HTMLCanvasElement,
+    textures: TextureCache,
+    options: SolarSystemOptions = {},
+  ) {
     this.textures = textures
     this.scene = new THREE.Scene()
     // Placeholder until Starfield installs the equirect backdrop. No fog: it
@@ -192,10 +207,22 @@ export class SolarSystem {
 
     this.renderer = new THREE.WebGLRenderer({
       canvas,
-      antialias: true,
+      // MSAA on the default framebuffer only does anything for geometry drawn
+      // straight to it. Whenever the post-processing chain is in play the scene
+      // lands in EffectComposer's own render target — which three builds without
+      // multisampling — and the only thing that ever touches the canvas is a
+      // fullscreen quad, whose interior has no edges to smooth. The multisample
+      // buffer is still allocated and still resolved every frame, so on the
+      // composited path this is a full-resolution resolve bought for nothing.
+      // The `?intro=0` path draws direct and genuinely wants it.
+      antialias: options.antialias ?? true,
       alpha: false,
       powerPreference: 'high-performance',
-      preserveDrawingBuffer: true,
+      // Forces the browser to keep a readable copy of the drawing buffer after
+      // compositing, which costs a full-frame copy every frame and rules out the
+      // zero-copy swap path. Nothing in the site reads pixels back — it exists
+      // for the headless capture scripts, so it is theirs to ask for.
+      preserveDrawingBuffer: options.preserveDrawingBuffer ?? false,
     })
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
     this.renderer.setSize(w, h, false)
@@ -203,7 +230,10 @@ export class SolarSystem {
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping
     this.renderer.toneMappingExposure = 1.12
     const maxAniso = this.renderer.capabilities.getMaxAnisotropy()
-    // Use full GPU anisotropy so 8K maps stay sharp at grazing angles
+    // Full GPU anisotropy, so a map stays sharp at grazing angles. This matters
+    // MORE now that most devices settle at 4K rather than 8K — anisotropic
+    // filtering is what buys back the limb sharpness a smaller map gives up, and
+    // it costs sample bandwidth rather than the memory the tiering is protecting.
     this.textures.setMaxAnisotropy(Math.min(16, maxAniso || 16))
 
     this.controls = new OrbitControls(this.camera, canvas)
@@ -585,8 +615,14 @@ export class SolarSystem {
     )
   }
 
+  private killTravelTween(): void {
+    this.travelTween?.kill()
+    this.travelTween = null
+  }
+
   /** Pull back far enough to frame the whole system, looking at the Sun. */
   focusSystem(): void {
+    this.killTravelTween()
     this.travelActive = false
     this.onTravelComplete = null
     this.followFocus = false
@@ -673,6 +709,7 @@ export class SolarSystem {
   }
 
   focusImmediate(id: BodyId): void {
+    this.killTravelTween()
     this.focusedId = id
     this.followFocus = true
     this.travelActive = false
@@ -693,9 +730,9 @@ export class SolarSystem {
     onComplete?: (id: BodyId) => void,
   ): void {
     if (this.travelActive) return
+    this.killTravelTween()
     this.travelActive = true
-    this.travelT = 0
-    this.travelDuration = duration
+    this.travelProgress.t = 0
     this.onTravelComplete = onComplete ?? null
     this.camFrom.copy(this.camera.position)
     this.lookFrom.copy(this.controls.target)
@@ -707,6 +744,14 @@ export class SolarSystem {
     this.applyFocusLimits(id)
     this.labels?.setFocused(id)
     this.orbitPaths.setFocused(id)
+    // GSAP owns the 0→1 clock. The path is re-sampled each frame from the
+    // live destination — planets move, so a baked MotionPath would miss.
+    this.travelTween = gsap.to(this.travelProgress, {
+      t: 1,
+      duration,
+      ease: 'power2.inOut',
+      overwrite: true,
+    })
   }
 
   private cameraPoseFor(id: BodyId): FocusCameraPose {
@@ -903,23 +948,22 @@ export class SolarSystem {
       ring.lookAt(this.camera.position)
     }
 
-    // An intro driver owns the camera outright: no travel lerp, no damping.
+    // An intro driver owns the camera outright: no travel tween, no damping.
     if (this.cameraDriver) {
       this.cameraDriver(dt)
     } else if (this.travelActive) {
-      this.travelT += dt / this.travelDuration
-      const t = Math.min(1, this.travelT)
-      const e = t * t * (3 - 2 * t)
+      const e = this.travelProgress.t
       // The destination is moving, so re-derive it from the live pose each frame
       // instead of flying to where the planet used to be.
       const pose = this.cameraPoseFor(this.focusedId)
       this.camTo.copy(pose.position)
       this.lookTo.copy(pose.target)
-      this.camera.position.lerpVectors(this.camFrom, this.camTo, e)
-      this.controls.target.lerpVectors(this.lookFrom, this.lookTo, e)
+      sampleCameraArc(this.camFrom, this.camTo, e, this.camera.position)
+      sampleLookTarget(this.lookFrom, this.lookTo, e, this.controls.target)
       this.controls.update()
-      if (t >= 1) {
+      if (e >= 1) {
         this.travelActive = false
+        this.killTravelTween()
         this.showHotspots(this.focusedId)
         this.labels?.setFocused(this.focusedId)
         this.onTravelComplete?.(this.focusedId)
@@ -955,6 +999,7 @@ export class SolarSystem {
 
   dispose(): void {
     this.disposed = true
+    this.killTravelTween()
     cancelAnimationFrame(this.animationId)
     window.removeEventListener('resize', this.handleResize)
     this.renderer.domElement.removeEventListener('pointerdown', this.handlePointer)

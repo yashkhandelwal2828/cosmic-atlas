@@ -559,6 +559,7 @@ Currently the camera is parked at a static pose. Once planets move it drifts off
   position. This preserves whatever manual orbit/zoom the user has applied.
 - During a `travelTo` animation, recompute `camTo`/`lookTo` from the LIVE pose each
   frame so the ship leads a moving target instead of arriving where the planet was.
+  Sample the eye along `sampleCameraArc` (GSAP eases 0→1); do not lerp in a straight line.
 - Add `focusSystem()`: pull back to frame the whole system
   (`camera.position = (0, systemRadius*0.75, systemRadius*1.25)`, target origin).
   Wire it to the TimeControls "Top view" action.

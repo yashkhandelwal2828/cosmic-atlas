@@ -9,6 +9,7 @@
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
+    "build:textures": "node scripts/build-texture-tiers.mjs",
     "check:intro": "node scripts/intro-check.mjs",
     "check:launch": "node scripts/launch-check.mjs"
   },
@@ -22,6 +23,7 @@
     "vitest": "^4.1.10"
   },
   "dependencies": {
+    "gsap": "^3.15.0",
     "three": "^0.185.1"
   }
 }

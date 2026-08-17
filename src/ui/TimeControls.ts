@@ -118,9 +118,8 @@ export class TimeControls {
           </div>
         </div>
 
-        <div class="time-row">
-          <span class="time-row__legend" id="time-speed-label">Speed</span>
-          <div class="time-chips" role="group" aria-labelledby="time-speed-label">
+        <div class="time-row time-row--speed">
+          <div class="time-chips" role="group" aria-label="Simulation speed">
             ${TIME_PRESETS.map(
               (preset) => `
               <button type="button" class="time-chip" data-scale="${preset.secondsPerSecond}"
@@ -131,9 +130,8 @@ export class TimeControls {
           </div>
         </div>
 
-        <div class="time-row time-row--view">
-          <span class="time-row__legend" id="time-view-label">View</span>
-          <div class="time-seg" role="group" aria-labelledby="time-view-label">
+        <div class="time-row time-row--controls">
+          <div class="time-seg" role="group" aria-label="Distance scale">
             <button type="button" class="time-seg__btn" data-mode="compressed" aria-pressed="true">
               Compressed
             </button>
@@ -141,6 +139,9 @@ export class TimeControls {
               True distance
             </button>
           </div>
+
+          <span class="time-div" aria-hidden="true"></span>
+
           <label class="time-toggle">
             <input type="checkbox" data-el="orbits" checked />
             <span>Orbits</span>

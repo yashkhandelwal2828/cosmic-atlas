@@ -4,33 +4,49 @@
 import type { BodyContent, BodyId, Hotspot } from '../data/bodies'
 import { getEducationalContent } from '../data/content'
 
+/** Outgoing fade/slide before the next brief is written in. */
+export const BRIEF_EXIT_MS = 180
+/** Incoming title → stats → description beat. */
+export const BRIEF_STAGGER_MS = 50
+
+function prefersReducedMotion(): boolean {
+  return (
+    typeof window.matchMedia === 'function' &&
+    window.matchMedia('(prefers-reduced-motion: reduce)').matches
+  )
+}
+
 export class LearningPanel {
   private root: HTMLElement
+  private focused: BodyId | null = null
+  private exitTimer: number | null = null
+  private enterTimer: number | null = null
+  private pending: BodyId | null = null
 
   constructor(container: HTMLElement) {
     this.root = container
     this.root.classList.add('learning-panel')
     this.root.innerHTML = `
-      <div class="learning-panel__chrome">
+      <div class="learning-panel__chrome" data-stagger="title">
         <span class="learning-panel__eyebrow">Mission Brief</span>
         <h2 class="learning-panel__title" data-el="title">—</h2>
         <p class="learning-panel__tagline" data-el="tagline"></p>
       </div>
       <div class="learning-panel__scroll">
-        <p class="learning-panel__overview" data-el="overview"></p>
-        <section class="learning-panel__section">
+        <p class="learning-panel__overview" data-stagger="description" data-el="overview"></p>
+        <section class="learning-panel__section" data-stagger="stats">
           <h3>Key facts</h3>
           <dl class="learning-panel__facts" data-el="facts"></dl>
         </section>
-        <section class="learning-panel__section">
+        <section class="learning-panel__section" data-stagger="description">
           <h3>Composition</h3>
           <p data-el="composition"></p>
         </section>
-        <section class="learning-panel__section">
+        <section class="learning-panel__section" data-stagger="description">
           <h3>Notable features</h3>
           <ul class="learning-panel__features" data-el="features"></ul>
         </section>
-        <section class="learning-panel__section">
+        <section class="learning-panel__section" data-stagger="description">
           <h3>Explore hotspots</h3>
           <p class="learning-panel__hint">Click markers on the planet or select below.</p>
           <div class="learning-panel__hotspots" data-el="hotspots"></div>
@@ -44,9 +60,46 @@ export class LearningPanel {
   }
 
   update(bodyId: BodyId): void {
-    const content = getEducationalContent(bodyId)
-    this.renderBody(content)
+    if (this.exitTimer !== null) {
+      this.pending = bodyId
+      return
+    }
+    if (this.focused === bodyId) return
+    if (this.focused === null || prefersReducedMotion()) {
+      this.commit(bodyId, false)
+      return
+    }
+    this.pending = bodyId
+    this.root.classList.remove('learning-panel--entering')
+    this.root.classList.add('learning-panel--exiting')
+    this.exitTimer = window.setTimeout(() => {
+      this.exitTimer = null
+      const next = this.pending ?? bodyId
+      this.pending = null
+      this.commit(next, true)
+    }, BRIEF_EXIT_MS)
+  }
+
+  private commit(bodyId: BodyId, enter: boolean): void {
+    this.focused = bodyId
+    this.renderBody(getEducationalContent(bodyId))
     this.clearDetail()
+    this.root.classList.remove('learning-panel--exiting')
+    if (this.enterTimer !== null) {
+      window.clearTimeout(this.enterTimer)
+      this.enterTimer = null
+    }
+    if (enter && !prefersReducedMotion()) {
+      this.root.classList.remove('learning-panel--entering')
+      void this.root.offsetWidth
+      this.root.classList.add('learning-panel--entering')
+      this.enterTimer = window.setTimeout(() => {
+        this.enterTimer = null
+        this.root.classList.remove('learning-panel--entering')
+      }, BRIEF_EXIT_MS + BRIEF_STAGGER_MS * 2 + 400)
+    } else {
+      this.root.classList.remove('learning-panel--entering')
+    }
   }
 
   highlightHotspot(hotspot: Hotspot): void {

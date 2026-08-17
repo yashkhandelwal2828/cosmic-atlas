@@ -3,6 +3,16 @@
  */
 import { BODY_ORDER, BODIES, type BodyId } from '../data/bodies'
 
+const MAGNET_RADIUS_PX = 88
+const MAGNET_PULL_PX = 10
+
+function prefersReducedMotion(): boolean {
+  return (
+    typeof window.matchMedia === 'function' &&
+    window.matchMedia('(prefers-reduced-motion: reduce)').matches
+  )
+}
+
 export class BodySelector {
   private root: HTMLElement
   private onSelect: (id: BodyId) => void
@@ -13,6 +23,7 @@ export class BodySelector {
     this.onSelect = onSelect
     this.root.classList.add('body-selector')
     this.render()
+    this.bindMagnet()
   }
 
   setFocused(id: BodyId): void {
@@ -43,8 +54,14 @@ export class BodySelector {
               class="body-chip${active}"
               data-id="${id}"
               aria-pressed="${id === this.focused}"
-              title="${body.name}">
-              <span class="body-chip__dot" style="--chip-color:${body.color}"></span>
+              title="${body.name}"
+              style="--chip-color:${body.color}">
+              <span class="body-chip__glyph">
+                <span class="body-chip__orbit" aria-hidden="true">
+                  <span class="body-chip__sat"></span>
+                </span>
+                <span class="body-chip__dot"></span>
+              </span>
               <span class="body-chip__name">${body.name}</span>
             </button>`
         }).join('')}
@@ -57,5 +74,51 @@ export class BodySelector {
         if (id) this.onSelect(id)
       })
     })
+  }
+
+  private bindMagnet(): void {
+    const rail = this.root.querySelector('.body-selector__rail')
+    if (!rail) return
+    rail.addEventListener('pointermove', (event) => {
+      this.magnetize(event as PointerEvent)
+    })
+    rail.addEventListener('pointerleave', () => this.clearMagnet())
+  }
+
+  private magnetize(event: PointerEvent): void {
+    if (prefersReducedMotion()) return
+    this.root.querySelectorAll<HTMLElement>('.body-chip').forEach((chip) => {
+      if ((chip as HTMLButtonElement).disabled) {
+        this.resetChip(chip)
+        return
+      }
+      const box = chip.getBoundingClientRect()
+      const dx = event.clientX - (box.left + box.width / 2)
+      const dy = event.clientY - (box.top + box.height / 2)
+      const dist = Math.hypot(dx, dy)
+      if (dist > MAGNET_RADIUS_PX) {
+        this.resetChip(chip)
+        return
+      }
+      const t = 1 - dist / MAGNET_RADIUS_PX
+      const pull = t * t * MAGNET_PULL_PX
+      const nx = dist === 0 ? 0 : dx / dist
+      const ny = dist === 0 ? 0 : dy / dist
+      chip.style.setProperty('--mx', `${nx * pull}px`)
+      chip.style.setProperty('--my', `${ny * pull}px`)
+      chip.style.setProperty('--ms', String(1 + 0.16 * t))
+    })
+  }
+
+  private clearMagnet(): void {
+    this.root.querySelectorAll<HTMLElement>('.body-chip').forEach((chip) => {
+      this.resetChip(chip)
+    })
+  }
+
+  private resetChip(chip: HTMLElement): void {
+    chip.style.setProperty('--mx', '0px')
+    chip.style.setProperty('--my', '0px')
+    chip.style.removeProperty('--ms')
   }
 }

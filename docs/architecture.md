@@ -8,7 +8,11 @@ Production-ready interactive solar-system education site: Earth-first camera, tr
 
 ```
 index.html
-public/textures/          # WebP (+ JPG fallback) planetary maps
+public/textures/          # native maps, up to 8192x4096 ("hi")
+  lo/                     # <=2048 WebP — what the intro and phones run on
+  mid/                    # <=4096 WebP — the steady state on most laptops
+scripts/
+  build-texture-tiers.mjs # regenerates lo/ and mid/ from the native set
 src/
   main.ts                 # boot, wire travel ↔ scene ↔ UI
   style.css
@@ -21,6 +25,7 @@ src/
     travel.test.ts
   scene/
     SolarSystem.ts        # Three.js scene controller
+    cameraArc.ts          # pure travel arc: swoop out, then back in
     textures.ts           # cache, paths, procedural rings
   intro/
     IntroSequence.ts      # conductor: owns the clock, drives everything below
@@ -69,7 +74,7 @@ state:
   ephemeris position, pre-loaded as the default answer. `launchPositionAt`
   returns the target exactly at t=1, so releasing the override is a no-op rather
   than a snap. Verified numerically by `scripts/intro-check.mjs`.
-- `setCameraDriver` — suspends focus-following, travel lerp, and OrbitControls
+- `setCameraDriver` — suspends focus-following, GSAP travel, and OrbitControls
   damping so nothing fights the choreography.
 - `setRenderOverride` — routes drawing through the composer. Bloom stays on
   permanently after handoff; the lens, radial-blur, and film passes are disposed.
@@ -78,6 +83,38 @@ The clock **holds** at the detonation until first-wave textures resolve (ceiling
 `LAUNCH_GATE_MAX_WAIT`), so planets are not born wearing fallback materials.
 
 `?intro=0` bypasses it, as does `prefers-reduced-motion`.
+
+## Texture resolution tiering
+
+Because the intro is the loading screen, whatever boot asks for is decoded and
+uploaded *while the cinematic plays*. The native maps are up to 8192x4096 —
+134 MB of decoded RGBA each, a synchronous `texImage2D` and a
+`glGenerateMipmap` — and nine of them used to land across the detonation. On a
+MacBook Air that measured as a **2.4-second frozen frame**.
+
+So every map enters at `lo` (2048) and resolution is raised afterwards:
+
+- `scene/textureTier.ts` — pure policy. `selectTextureCeiling` picks lo/mid/hi
+  from `maxTextureSize`, `deviceMemory`, core count, pointer coarseness and Data
+  Saver. Surface maps get the ceiling; cloud/normal/specular/ring maps are held
+  one tier lower by `companionCeiling`.
+- `scene/TextureUpgrader.ts` — drains an upgrade queue one map per idle slot, so
+  at most one upload happens per frame. `boost()` jumps a travel target ahead.
+- `TextureCache.upgrade` mutates the existing `THREE.Texture` in place, so no
+  material has to be rebound; `scheduleUpload` chains uploads through
+  `requestAnimationFrame` so an arriving map never piles onto a busy frame.
+
+Only what is on screen is ever raised — the sky, the Sun and the focused body.
+Nine planets at 8K would be over a gigabyte of texture memory for eight things
+nobody is pointed at.
+
+Decode runs off the main thread via `ImageBitmapLoader`. That path bakes the
+vertical flip in at decode (`imageOrientation: 'flipY'`, `texture.flipY = false`)
+rather than trusting `UNPACK_FLIP_Y_WEBGL`, whose ImageBitmap behaviour has
+differed between browsers — and `bitmapFlipIsHonoured()` proves the option works
+here before using it, because the failure mode is silent upside-down planets.
+
+Regenerate the derived tiers with `npm run build:textures` (needs ImageMagick).
 
 ### Verification
 
@@ -106,7 +143,10 @@ Each body: name, tagline, facts[], overview, composition, notableFeatures[], hot
 - Critical load: stars, sun, earth, clouds → first paint
 - Remaining planets lazy after paint
 - Saturn rings: procedural canvas texture with alpha bands
-- Camera travel: smoothstep lerp ~1.6s between poses
+- Camera travel: GSAP `power2.inOut` ~1.6s along a `sin(πt)` arc that lifts
+  up and out, then back in. Destination pose is re-read live each frame.
+  Look-at uses a shallower bow and stays outside the Sun so hops across the
+  system frame the void, not the photosphere.
 
 ## UI
 

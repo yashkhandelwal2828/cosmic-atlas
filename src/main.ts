@@ -23,6 +23,13 @@ import {
 } from './state/simTime'
 import { SolarSystem } from './scene/SolarSystem'
 import { TextureCache } from './scene/textures'
+import { TextureUpgrader } from './scene/TextureUpgrader'
+import {
+  alwaysVisibleUpgradeJobs,
+  probeTextureCaps,
+  selectTextureCeiling,
+  upgradeJobsFor,
+} from './scene/textureTier'
 import { IntroSequence } from './intro/IntroSequence'
 import { IntroOverlay, shouldPlayIntro } from './intro/IntroOverlay'
 import { INCLINATION_EXAGGERATION, type DistanceMode } from './scene/scale'
@@ -51,22 +58,16 @@ const loadingMarkup = playIntro
       <div class="loading-card">
         <div class="loading-spinner" aria-hidden="true"></div>
         <p>Preparing the solar system…</p>
-        <p class="loading-sub">Real 8K planetary maps · Earth day/night · labels</p>
+        <p class="loading-sub">Real planetary maps · Earth day/night · labels</p>
       </div>
     </div>
   `
 
 app.innerHTML = `
   <div class="shell${playIntro ? ' shell--intro' : ''}">
-    <header class="topbar">
-      <div class="brand">
-        <span class="brand__mark" aria-hidden="true"></span>
-        <div>
-          <p class="brand__kicker">Interactive education</p>
-          <h1 class="brand__title">Cosmic Atlas</h1>
-        </div>
-      </div>
-      <p class="topbar__hint">Start at Earth · travel the solar system · inspect hotspots to learn</p>
+    <header class="brand-block">
+      <h1 class="brand__title">Cosmic Atlas</h1>
+      <p class="brand__kicker">Interactive Education</p>
       <div class="status" data-status>
         <span class="status__dot"></span>
         <span data-status-text>Loading mission assets…</span>
@@ -102,8 +103,40 @@ let travelState: TravelState = createInitialTravelState()
 let simTime: SimTimeState = createSimTime(Date.now())
 let distanceMode: DistanceMode = 'compressed'
 
+/**
+ * Headless capture needs a readable drawing buffer; a real visit does not, and
+ * paying for one costs a full-frame copy every frame. Playwright sets
+ * `navigator.webdriver`, so the verification scripts opt in without knowing they
+ * had to, and `?capture=1` covers a manual grab from a normal browser.
+ */
+const wantsCapture =
+  navigator.webdriver === true ||
+  new URLSearchParams(location.search).get('capture') === '1'
+
 const textures = new TextureCache()
-const solar = new SolarSystem(canvas, textures)
+const solar = new SolarSystem(canvas, textures, {
+  // The intro installs a post-processing chain that never lets scene geometry
+  // touch the default framebuffer, so its multisample buffer would be resolved
+  // every frame for a fullscreen quad. The direct path draws straight to the
+  // canvas and does want MSAA.
+  antialias: !playIntro,
+  preserveDrawingBuffer: wantsCapture,
+})
+
+/**
+ * Every map loads at 2K so the intro has a clear frame budget; resolution is
+ * raised afterwards by the upgrader, on idle, one map at a time. The ceiling is
+ * a property of the device, not of the asset — see scene/textureTier.ts.
+ */
+textures.useRenderer(solar.renderer)
+const textureCeiling = selectTextureCeiling(
+  probeTextureCaps(
+    solar.renderer.getContext(),
+    solar.renderer.capabilities.isWebGL2 ?? true,
+  ),
+)
+const upgrader = new TextureUpgrader(textures)
+
 solar.setSimTime(simTime.epochMs)
 solar.enableLabels(labelHost || shell)
 const panel = new LearningPanel(panelEl)
@@ -169,10 +202,14 @@ async function requestTravel(targetId: BodyId): Promise<void> {
   travelState = startTravel(travelState, targetId)
   selector.setTraveling(true)
   selector.setFocused(targetId)
+  panel.update(targetId)
   setStatus(`Traveling to ${getEducationalContent(targetId).name}…`)
 
-  // Prefetch target texture while animating
+  // Prefetch target texture while animating, then sharpen it. The 2K map is what
+  // guarantees the planet is wearing something by the time the camera arrives;
+  // the upgrade lands a beat later, under a camera that has stopped moving.
   void textures.loadBody(targetId).catch(() => undefined)
+  upgrader.boost(upgradeJobsFor(targetId, textureCeiling))
 
   solar.travelTo(targetId, 1.65, (id) => {
     travelState = completeTravel(travelState, id)
@@ -207,6 +244,24 @@ function announceAllMapsReady(): void {
 }
 
 /**
+ * Begin raising resolution. Called only once the scene is interactive — during
+ * the intro an 8K upload lands on the frame with the least headroom in the whole
+ * sequence, which is the entire reason the maps came in at 2K to begin with.
+ *
+ * Only what is on screen is queued: the sky, the Sun, and the body in focus.
+ * The other seven planets stay at 2K until `requestTravel` boosts them, because
+ * nine bodies at full resolution is over a gigabyte of texture memory spent on
+ * eight things nobody is looking at.
+ */
+function startTextureUpgrades(focused: BodyId): void {
+  if (textureCeiling === 'lo') return
+  upgrader.enqueue([
+    ...upgradeJobsFor(focused, textureCeiling),
+    ...alwaysVisibleUpgradeJobs(textureCeiling),
+  ])
+}
+
+/**
  * Cinematic path: the render loop starts on the first frame and the intro plays
  * over the top of texture loading, so the sequence IS the loading screen. The
  * DOM loading card is dismissed immediately — two loaders would fight.
@@ -229,6 +284,7 @@ async function bootWithIntro(): Promise<void> {
       selector.setFocused('earth')
       setStatus('Exploring Earth', true)
       announceAllMapsReady()
+      startTextureUpgrades('earth')
     },
   })
 
@@ -259,6 +315,7 @@ async function bootDirect(): Promise<void> {
     loadingEl?.classList.add('loading-overlay--done')
     setStatus('Exploring Earth', true)
     announceAllMapsReady()
+    startTextureUpgrades('earth')
   } catch (err) {
     console.error(err)
     setStatus('Loaded with fallback materials')
@@ -291,6 +348,7 @@ declare global {
       getSimTime: () => number
       setSimTime: (ms: number) => void
       getBodyPosition: (id: BodyId) => { x: number; y: number; z: number }
+      getCameraPosition: () => { x: number; y: number; z: number }
       getDistanceMode: () => DistanceMode
       isIntroPlaying: () => boolean
       getIntroTime: () => number
@@ -323,6 +381,10 @@ window.__COSMIC_ATLAS__ = {
   },
   getBodyPosition: (id) => {
     const p = solar.getBodyWorldPosition(id)
+    return { x: p.x, y: p.y, z: p.z }
+  },
+  getCameraPosition: () => {
+    const p = solar.camera.position
     return { x: p.x, y: p.y, z: p.z }
   },
   getDistanceMode: () => distanceMode,
