@@ -66,7 +66,10 @@ const loadingMarkup = playIntro
 app.innerHTML = `
   <div class="shell${playIntro ? ' shell--intro' : ''}">
     <header class="brand-block">
-      <h1 class="brand__title">Cosmic Atlas</h1>
+      <div class="brand__lockup">
+        <img class="brand__mark" src="/brand-mark.png" width="64" height="64" alt="" />
+        <h1 class="brand__title">Cosmic Atlas</h1>
+      </div>
       <p class="brand__kicker">Interactive Education</p>
       <div class="status" data-status>
         <span class="status__dot"></span>

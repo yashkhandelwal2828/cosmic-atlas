@@ -62,7 +62,9 @@ cosmic-atlas/
 │   ├── architecture.md
 │   └── orbital-mechanics-spec.md
 ├── public/
-│   ├── favicon.svg
+│   ├── favicon.png
+│   ├── apple-touch-icon.png
+│   ├── brand-mark.png
 │   └── textures/               # shipped maps (lo/, mid/, native)
 ├── scripts/                    # texture tiers + launch/orbit checks
 └── src/

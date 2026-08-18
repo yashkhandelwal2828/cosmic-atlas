@@ -131,6 +131,19 @@ body,
   pointer-events: none;
 }
 
+.brand__lockup {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+}
+
+.brand__mark {
+  width: max(1.85rem, calc(var(--fs-display) * 0.72));
+  height: max(1.85rem, calc(var(--fs-display) * 0.72));
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
 .brand__title {
   margin: 0;
   font-size: var(--fs-display);
@@ -141,8 +154,14 @@ body,
   text-shadow: 0 4px 40px rgba(0, 0, 0, 0.7);
 }
 
+.brand__kicker,
+.status {
+  margin-left: calc(max(1.85rem, calc(var(--fs-display) * 0.72)) + 0.7rem);
+}
+
 .brand__kicker {
-  margin: 0;
+  margin-top: 0;
+  margin-bottom: 0;
   font-size: 0.95rem;
   font-weight: 500;
   letter-spacing: 0.005em;
