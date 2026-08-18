@@ -7,6 +7,8 @@ Production-ready interactive solar-system education site: Earth-first camera, tr
 ## File tree
 
 ```
+LICENSE                   # MIT — original project code only
+licenses/                 # SSS / Three.js / GSAP texts (not relicensed)
 index.html
 public/textures/          # native maps, up to 8192x4096 ("hi")
   lo/                     # <=2048 WebP — what the intro and phones run on

@@ -41,3 +41,6 @@ public/textures/hd8k/
 public/textures/hd/
 public/textures/raw/
 .vercel
+
+# Browser/session leftovers from texture downloads
+cookies.txt
