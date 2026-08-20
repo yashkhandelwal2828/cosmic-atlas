@@ -46,24 +46,23 @@ const TIERS = { lo: 2048, mid: 4096 }
  * the site would otherwise have served.
  */
 const KEYS = {
-  sun: ['sun', '2k_sun'],
-  mercury: ['mercury', '2k_mercury'],
-  venus: ['venus', '2k_venus_surface'],
+  sun: ['sun'],
+  mercury: ['mercury'],
+  venus: ['venus'],
   venus_atmosphere: ['venus_atmosphere'],
-  earth: ['earth', 'earth_day', '2k_earth_daymap'],
-  earth_night: ['earth_night', '2k_earth_nightmap'],
-  earth_clouds: ['earth_clouds', '2k_earth_clouds'],
+  earth: ['earth'],
+  earth_night: ['earth_night'],
+  earth_clouds: ['earth_clouds'],
   earth_normal: ['earth_normal'],
   earth_specular: ['earth_specular'],
-  mars: ['mars', '2k_mars'],
+  mars: ['mars'],
   mars_normal: ['mars_normal'],
-  jupiter: ['jupiter', '2k_jupiter'],
-  saturn: ['saturn', '2k_saturn'],
-  saturn_ring: ['saturn_ring', '2k_saturn_ring_alpha'],
-  uranus: ['uranus', '2k_uranus'],
-  neptune: ['neptune', '2k_neptune'],
-  moon: ['moon', '2k_moon'],
-  stars: ['stars', 'stars_milky_way', '2k_stars_milky_way'],
+  jupiter: ['jupiter'],
+  saturn: ['saturn'],
+  saturn_ring: ['saturn_ring'],
+  uranus: ['uranus'],
+  neptune: ['neptune'],
+  stars: ['stars'],
 }
 
 /**
@@ -85,6 +84,10 @@ function resolveSource(key) {
       if (existsSync(path)) return path
     }
   }
+  // Companion maps (clouds, normals, rings) ship only as lo/mid WebP.
+  // If the native root file is gone, rebuild lo from the mid encode.
+  const mid = join(TEX, 'mid', `${key}.webp`)
+  if (existsSync(mid)) return mid
   return null
 }
 

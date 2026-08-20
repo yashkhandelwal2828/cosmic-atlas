@@ -51,6 +51,8 @@ cosmic-atlas/
 ├── index.html                  # Vite entry
 ├── package.json                # app scripts (this is not an npm library)
 ├── LICENSE                     # MIT — original project code only
+├── CONTRIBUTING.md
+├── SECURITY.md
 ├── README.md
 ├── assets/                     # README preview
 ├── licenses/                   # third-party license texts
@@ -65,8 +67,9 @@ cosmic-atlas/
 │   ├── favicon.png
 │   ├── apple-touch-icon.png
 │   ├── brand-mark.png
-│   └── textures/               # shipped maps (lo/, mid/, native)
+│   └── textures/               # shipped maps (lo/, mid/, native albedo)
 ├── scripts/                    # texture tiers + launch/orbit checks
+├── .github/workflows/ci.yml    # unit tests + tsc
 └── src/
     ├── main.ts                 # boot, clock, travel ↔ scene ↔ UI
     ├── style.css
@@ -84,3 +87,7 @@ Interaction and production-asset patterns come from educational 3D explorers (an
 Planetary textures are from [Solar System Scope](https://www.solarsystemscope.com/textures/) and remain under [CC BY 4.0](licenses/CC-BY-4.0.txt). Rendering uses [three.js](https://threejs.org/) (MIT) and camera motion uses [GSAP](https://gsap.com/) (Standard “no charge” license). Those works stay under their own terms — the project MIT license does not relicense them. Full texts and a rights map are in [`licenses/`](licenses/).
 
 Original Cosmic Atlas source code is licensed under the [MIT License](LICENSE).
+
+## Contributing
+
+See [`CONTRIBUTING.md`](CONTRIBUTING.md). Security reports go through [`SECURITY.md`](SECURITY.md). This project follows [`CODE_OF_CONDUCT.md`](CODE_OF_CONDUCT.md).

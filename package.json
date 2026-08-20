@@ -4,6 +4,16 @@
   "version": "1.0.0",
   "license": "MIT",
   "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/yashkhandelwal2828/cosmic-atlas.git"
+  },
+  "bugs": {
+    "url": "https://github.com/yashkhandelwal2828/cosmic-atlas/issues"
+  },
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",

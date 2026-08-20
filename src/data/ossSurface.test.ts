@@ -34,6 +34,7 @@ describe('stranger-facing README', () => {
     expect(readme).toMatch(/^## Run locally$/m)
     expect(readme).toMatch(/^## Project structure$/m)
     expect(readme).toMatch(/^## Design and attribution$/m)
+    expect(readme).toMatch(/^## Contributing$/m)
   })
 
   it('shows an in-repo preview image that actually exists', () => {
@@ -59,6 +60,15 @@ describe('stranger-facing README', () => {
 
   it('does not invent a hosted demo URL', () => {
     expect(readme).not.toMatch(/https?:\/\/[^\s)]+\.(vercel\.app|github\.io)/)
+  })
+
+  it('points strangers at contributing and security docs', () => {
+    expect(readme).toMatch(/CONTRIBUTING\.md/)
+    expect(readme).toMatch(/SECURITY\.md/)
+    expect(exists('CONTRIBUTING.md')).toBe(true)
+    expect(exists('SECURITY.md')).toBe(true)
+    expect(exists('CODE_OF_CONDUCT.md')).toBe(true)
+    expect(exists('.github/workflows/ci.yml')).toBe(true)
   })
 })
 
@@ -131,6 +141,13 @@ describe('product-only public tree', () => {
     const ignore = read('.gitignore')
     expect(ignore).toMatch(/^cookies\.txt$/m)
     expect(ignore).toMatch(/public\/textures\/raw8k\//)
+    expect(ignore).toMatch(/^docs\/artifacts\/$/m)
     expect(statSync(resolve(root, '.gitignore')).isFile()).toBe(true)
+  })
+
+  it('strips local texture archives from the Vite dist copy', () => {
+    const vite = read('vite.config.ts')
+    expect(vite).toMatch(/omit-texture-archives/)
+    expect(vite).toMatch(/raw8k/)
   })
 })

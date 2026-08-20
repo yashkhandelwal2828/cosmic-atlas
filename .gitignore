@@ -40,7 +40,27 @@ public/textures/raw8k/
 public/textures/hd8k/
 public/textures/hd/
 public/textures/raw/
+
+# Runtime-dead maps. The loader never requests these: 2k_* and root WebP lose
+# to the native primary JPG, companion maps (clouds / normals / rings) cap at
+# mid/, and the Moon is out of BODY_ORDER.
+public/textures/2k_*
+public/textures/*.webp
+public/textures/earth_day.jpg
+public/textures/earth_clouds.jpg
+public/textures/earth_normal.jpg
+public/textures/earth_specular.jpg
+public/textures/mars_normal.jpg
+public/textures/venus_atmosphere.jpg
+public/textures/saturn_ring.png
+public/textures/moon.jpg
+public/textures/lo/moon.webp
+public/textures/mid/moon.webp
+
 .vercel
 
 # Browser/session leftovers from texture downloads
 cookies.txt
+
+# Agent explainers — not part of the product
+docs/artifacts/
