@@ -87,3 +87,52 @@ describe('LearningPanel mission-brief stagger', () => {
     expect(root.classList.contains('learning-panel--entering')).toBe(false)
   })
 })
+
+describe('LearningPanel mobile collapse', () => {
+  beforeEach(() => {
+    vi.useFakeTimers()
+    stubMatchMedia(false)
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
+    document.body.replaceChildren()
+  })
+
+  it('starts expanded when the viewport is desktop-sized', () => {
+    const { root } = mount()
+    expect(root.classList.contains('learning-panel--collapsed')).toBe(false)
+  })
+
+  it('folds to the header card and back via the toggle', () => {
+    const { root } = mount()
+    const toggle = root.querySelector('[data-el="toggle"]') as HTMLButtonElement
+    toggle.click()
+    expect(root.classList.contains('learning-panel--collapsed')).toBe(true)
+    expect(toggle.getAttribute('aria-expanded')).toBe('false')
+    toggle.click()
+    expect(root.classList.contains('learning-panel--collapsed')).toBe(false)
+    expect(toggle.getAttribute('aria-expanded')).toBe('true')
+  })
+
+  it('starts collapsed on a phone-width viewport', () => {
+    Object.defineProperty(window, 'matchMedia', {
+      writable: true,
+      configurable: true,
+      value: (query: string) => ({
+        matches:
+          query.includes('max-width: 860px') ||
+          (query.includes('prefers-reduced-motion') && false),
+        media: query,
+        onchange: null,
+        addListener: () => undefined,
+        removeListener: () => undefined,
+        addEventListener: () => undefined,
+        removeEventListener: () => undefined,
+        dispatchEvent: () => false,
+      }),
+    })
+    const { root } = mount()
+    expect(root.classList.contains('learning-panel--collapsed')).toBe(true)
+  })
+})

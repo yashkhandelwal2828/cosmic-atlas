@@ -22,13 +22,19 @@ export class LearningPanel {
   private exitTimer: number | null = null
   private enterTimer: number | null = null
   private pending: BodyId | null = null
+  private collapsed = false
 
   constructor(container: HTMLElement) {
     this.root = container
     this.root.classList.add('learning-panel')
     this.root.innerHTML = `
       <div class="learning-panel__chrome" data-stagger="title">
-        <span class="learning-panel__eyebrow">Mission Brief</span>
+        <div class="learning-panel__head">
+          <span class="learning-panel__eyebrow">Mission Brief</span>
+          <button type="button" class="learning-panel__toggle" data-el="toggle" aria-expanded="true" aria-label="Collapse mission brief">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15.5 5.5 9l1.4-1.4L12 12.7l5.1-5.1L18.5 9z"/></svg>
+          </button>
+        </div>
         <h2 class="learning-panel__title" data-el="title">—</h2>
         <p class="learning-panel__tagline" data-el="tagline"></p>
       </div>
@@ -57,6 +63,23 @@ export class LearningPanel {
         </section>
       </div>
     `
+
+    // On phones the full brief buries the scene, so start folded down to the
+    // header card; desktop keeps it open where there is room for both.
+    if (typeof window.matchMedia === 'function' && window.matchMedia('(max-width: 860px)').matches) {
+      this.setCollapsed(true)
+    }
+    const toggle = this.root.querySelector('[data-el="toggle"]') as HTMLButtonElement
+    toggle.addEventListener('click', () => this.setCollapsed(!this.collapsed))
+  }
+
+  private setCollapsed(collapsed: boolean): void {
+    this.collapsed = collapsed
+    this.root.classList.toggle('learning-panel--collapsed', collapsed)
+    const toggle = this.root.querySelector('[data-el="toggle"]') as HTMLButtonElement | null
+    const label = collapsed ? 'Expand mission brief' : 'Collapse mission brief'
+    toggle?.setAttribute('aria-expanded', String(!collapsed))
+    toggle?.setAttribute('aria-label', label)
   }
 
   update(bodyId: BodyId): void {
